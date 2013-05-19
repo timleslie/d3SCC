@@ -27,6 +27,7 @@ function draw_links(data, path_g) {
 	.attr("class", "link")
 	.attr("stroke-width", "2px")
 	.attr("stroke", "#000")
+	.attr("marker-start", function(d) { if (d.bidirectional) return "url(#start)"; } )
 	.attr("marker-end", "url(#end)")
 	.attr("d", function(d) {
             return "M" + 
@@ -35,17 +36,6 @@ function draw_links(data, path_g) {
 		data.nodes[d.nodes[1]].x + "," + 
 		data.nodes[d.nodes[1]].y;
 	});
-
-    
-    //var link = line_g.selectAll("line")
-//	.data(data.links);
-
-    // Create
-  //  link.enter().append("line")
-//	.attr("x1", function(d) { return data.nodes[d.nodes[0]].x; })
-//	.attr("y1", function(d) { return data.nodes[d.nodes[0]].y; })
-//	.attr("x2", function(d) { return data.nodes[d.nodes[1]].x; })
-//	.attr("y2", function(d) { return data.nodes[d.nodes[1]].y; });
 }
 
 function draw_nodes(data, circle_g) {
@@ -180,7 +170,6 @@ function draw_DFS(data, DFS_g, stack_x0, box_h, box_w, hot_seat, stack_y0) {
 	.attr("x", hot_seat.text_x)
 	.attr("y", hot_seat.text_y)
 	.remove();
-
 }
 
 function draw_stack(data, stack_data, stack_x0, id, g, stack_x0_other, box_h, box_w, hot_seat, stack_y0) {
@@ -200,7 +189,6 @@ function draw_stack(data, stack_data, stack_x0, id, g, stack_x0_other, box_h, bo
         .transition().duration(1000)
 	.attr("x", function(d, i) { return stack_x0; } )
 	.attr("y", function(d, i) { return box_y(i, stack_y0, box_h) } )
-
 
     // On exit, fade out
     stack_rect.exit()
@@ -321,7 +309,7 @@ function draw_flying_min(data, flying_min_g, hot_seat) {
         .attr("y", function(d) { return data.nodes[d].y; } )
         .text( function(d) { return data.nodes[d].link; } )
         .transition().duration(1000)
-        .attr("x", hot_seat.text_x)
+        .attr("x", hot_seat.text_x + 4)
         .attr("y", hot_seat.text_y)
         .remove()
 }
@@ -345,7 +333,7 @@ function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, bo
         .attr("y", label_y)
         .text(data.label)
         .transition().duration(1000)
-	.attr("x", stack_x + box_w/2 + 1) // Slight offset to not land on top of the current label
+	.attr("x", stack_x + box_w/2 + 2) // Slight offset to not land on top of the current label
   	.attr("y", function(d, i) { return text_y(box_y(d, stack_y0, box_h), box_h); } )
         .remove();
 
@@ -361,7 +349,6 @@ function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, bo
 	.attr("x", function(d) { return d.x; } )
   	.attr("y", function(d) { return d.y; } )
         .remove();
-
 }
 
 function draw_all(path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
@@ -406,7 +393,6 @@ function main() {
 	.attr("width", w)
 	.attr("height", h);
 
-
     // The main dynamic groups
     var hotseat_g = svg.append("g").attr("id", "hotseat");
     var stack_g = svg.append("g").attr("id", "stack");
@@ -417,7 +403,6 @@ function main() {
     var flying_min_g = svg.append("g").attr("id", "flying_min");
     var flying_label_a_g = svg.append("g").attr("id", "flying_label_a");
     var flying_label_b_g = svg.append("g").attr("id", "flying_label_b");
-
 
     // build the arrow.
     svg.append("svg:defs").selectAll("marker")
@@ -434,10 +419,24 @@ function main() {
 	.append("svg:path")
 	.attr("d", "M0,-5L10,0L0,5");
 
+    svg.append("svg:defs").selectAll("marker")
+	.data(["start"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", -15)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", "auto")
+	.append("svg:path")
+	.attr('d', 'M10,-5L0,0L10,5')
+
+    .attr('fill', '#000');
 
     // Graph
     var graph_g = svg.append("g").attr("id", "graph");
-    //var line_g = graph_g.append("g").attr("id", "lines");
     var path_g = graph_g.append("g").attr("id", "paths");
     
     var circle_g = graph_g.append("g").attr("id", "circles");
