@@ -38,6 +38,7 @@ function load_data() {
 	flying_min: [],
 	flying_label: [],
 	msg: "Use buttons to step through the SCC algorithm",
+	steps: 0,
     };
     return data;
 }
@@ -56,7 +57,7 @@ function update_DFS_head(data, v) {
 
 function push_links(data, v) {
     var target;
-    var found = false;
+    var found = [];
     for (var i = 0; i < data.links.length; i++) {
 	var link = data.links[i];
 	if (v == link.nodes[0]) {
@@ -65,7 +66,7 @@ function push_links(data, v) {
 		if (data.DFS.indexOf(target) >= 0) {
 		    data.DFS.splice(data.DFS.indexOf(target), 1);
 		}
-		found = true;
+		found.push(data.nodes[target].text);
 		data.DFS.push(target);
 	    }
 	}
@@ -75,15 +76,15 @@ function push_links(data, v) {
 		if (data.DFS.indexOf(target) >= 0) {
 		    data.DFS.splice(data.DFS.indexOf(target), 1);
 		}
-		found = true;
+		found.push(data.nodes[target].text);
 		data.DFS.push(target);
 	    }
 	}
     }
-    if (found) { 
-	data.msg = "Push children to DFS stack";
+    if (found.length > 0) { 
+	data.msg = "Push unvisited children of " + data.nodes[v].text + " to DFS stack: " + found;
     } else {
-	data.msg = "No children to push to DFS stack";
+	data.msg = data.nodes[v].text + " has no unvisited children to push to DFS stack";
     }
 }
 
@@ -117,23 +118,29 @@ function process_non_root(data, v) {
 
 function process_root(data, link) {
     // Label all nodes
-
     var i = data.stack.length - 1;
+    var nodes = [];
+    var root = data.nodes[data.stack[i]].text;
     while (i >= 0 && data.nodes[data.stack[i]].link >= link) {
 	data.nodes[data.stack[i]].link = data.label;
 	data.flying_label.push(i);
+	nodes.push(data.nodes[data.stack[i]].text);
 	i--;
     }
+    data.msg = root + " is a root node. Set label = " + data.label + " for nodes with link >= " + link + ": " + nodes;
     data.SCCs[data.nodes.length - data.label].visible = true;
 }
 
 function pop_labelled(data) { 
     // Pop nodes, update index/label
+    nodes = []
     while(data.stack.length > 0 && data.nodes[data.stack.last()].link == data.label) {
-	data.stack.pop();
+	v = data.stack.pop();
+	nodes.push(data.nodes[v].text);
 	data.index--;
     }
     data.label--;
+    data.msg = "Pop nodes in this SCC from the backtracked stack: " + nodes;
 }
 
 function backtrack(data, v) {
@@ -141,10 +148,13 @@ function backtrack(data, v) {
     data.need_to_push_stack = v;
     if (min == data.nodes[v].link) {
 	data.need_to_process_root = data.nodes[v].link;
-	data.flying_min = [v];
+	//data.flying_min = [v];
+	data.msg = "No children of " + data.nodes[v].text + " have a smaller link number: " + data.nodes[v].text + " is a root node"
     } else {
 	data.nodes[v].link = min; // has a lower link, push to stack
+	data.msg = "Set link of " + data.nodes[v].text +  " to minimum link of its children (" + data.nodes[v].text + " = " + min + ")"
     }
+    
 }
 
 
@@ -160,22 +170,19 @@ function process_node(data) {
     } else if (data.need_to_find_min >= 0) {
 	v = data.need_to_find_min;
 	data.need_to_find_min = -1;
-	data.msg = "Find minimum link number of children";
 	backtrack(data, v);
     } else if (data.need_to_push_stack >= 0) {
 	v = data.need_to_push_stack;
 	data.need_to_push_stack = -1;
-	data.msg = "Push node onto stack";
+	data.msg = "Push " + data.nodes[v].text + " onto backtracked stack";
 	data.stack.push(v);
     } else if (data.need_to_process_root >= 0) {
 	v = data.need_to_process_root;
 	data.need_to_process_root = -1;
-	data.msg = "Set label for nodes in this SCC";
 	process_root(data, v);	
 	data.need_to_pop_label = v;
     } else if (data.need_to_pop_label >= 0) {
 	data.need_to_pop_label = -1;
-	data.msg = "Pop nodes in this SCC from the stack";
 	pop_labelled(data);
     } else {
 	var v = data.DFS.last();
@@ -184,24 +191,26 @@ function process_node(data) {
 	    var i;
 	    for (i=0; i < data.nodes.length; i++) {
 		if (data.nodes[i].link == undefined) {
-		    data.msg = "Add next unvisited node to DFS stack";
+		    data.msg = "Add next unvisited node to DFS stack (" + data.nodes[i].text + ")";
 		    data.DFS.push(i);
 		    break;
 		}
 	    }
 	    if (i == data.nodes.length) {
+		data.steps--;
 		data.msg = "All SCCs identified";
 	    }
 	} else if (data.nodes[v].link === undefined) {
 	    // Begin DFS update
-	    data.msg = "Set index of top of DFS stack";
+	    data.msg = "Set link number of node at top of DFS stack to index (" + data.nodes[v].text + " = " + data.index + ")";
 	    update_DFS_head(data, v);
 	    data.need_to_push = v;
 	} else {
 	    // Begin DFS backtrack
-	    data.msg = "Pop DFS stack and begin backtrack";
 	    v = data.DFS.pop();
+	    data.msg = "Pop DFS stack and begin backtrack operations on " + data.nodes[v].text;
 	    data.need_to_find_min = v;
 	}
     }
+    data.steps++;
 }

@@ -1,10 +1,11 @@
-function set_stack_label(svg, stack_x0, stack_y0, stack_w, label, h) {
+function set_stack_label(svg, stack_x0, stack_y0, stack_w, label, color_idx) {
 
-    svg.append("g").attr("id", "label").append("text")
+    svg.append("g").attr("id", "label" + label).append("text")
 	.text(label)
 	.attr("x", stack_x0 + stack_w/2)
 	.attr("y", stack_y0 + 30)
 	.attr("text-anchor", "middle")
+        .attr("stroke", colors[color_idx]);
 }
 
 function node_text(node) { 
@@ -17,7 +18,12 @@ function node_text(node) {
 
 ///////// GRAPH DRAWING
 
-var colors = d3.scale.category10();
+var colors = []
+var color = d3.scale.category10();
+for (var i=0;i < 10; i++) {
+    colors.push(color(i));
+}
+
 
 function draw_links(data, path_g) {
 
@@ -48,22 +54,22 @@ function draw_nodes(data, circle_g) {
 	.attr("cx", function(d) { return d.x; })
 	.attr("cy", function(d) { return d.y; })
         .attr("fill", "#FFF")
-	.attr("stroke", colors(7));
+	.attr("stroke", colors[7]);
 	
     // update
     node.transition().duration(1000)
 	.attr("fill", function(d, i) {
 	    var idx = i;
-	    if ( data.stack.indexOf(idx) >= 0) {
-		return colors(0);
+	    if (data.nodes[i].link >= data.label) {
+		return colors[9];
+	    } else if ( data.stack.indexOf(idx) >= 0) {
+		return colors[6];
 	    } else if (data.DFS.indexOf(idx) >= 0) {
-		return colors(1);
+		return colors[2];
 	    } else if (data.nodes[i].link === undefined) {
-		return colors(2);
-	    } else if (data.nodes[i].link > data.label) {
-		return colors(9);
+		return colors[7];
 	    } else {
-		return colors(7);
+		return colors[4];
 	    }
 	});
 }
@@ -289,7 +295,7 @@ function draw_msg(data, msg_g) {
         .data([data.msg])
 
     msg_text.enter().append("text")
-        .attr("x", 150)
+        .attr("x", 120)
         .attr("y", 470);
     msg_text.text( function(d) { return d; } ).attr("font-weight", "bold");
 }
@@ -304,7 +310,7 @@ function draw_flying(data, flying_g, stack_y0, box_h) {
         .attr("y", 20)
         .text( function(d) { return data.index - 1; } )
         .transition().duration(1000)
-        .attr("x", function(d, i) { if (i == 0) { return data.nodes[d].x; } else { return 31; }})
+        .attr("x", function(d, i) { if (i == 0) { return data.nodes[d].x; } else { return 40; }})
         .attr("y", function(d, i) { if (i == 0) { return data.nodes[d].y; } else { return text_y(box_y(data.DFS.length - 1, stack_y0, box_h), box_h); } } )
         .remove()
 }
@@ -361,7 +367,18 @@ function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, bo
         .remove();
 }
 
-function draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
+function draw_steps(data, steps_g) {
+    var steps_text = steps_g.selectAll("text")
+	.data([data.steps]);
+
+    steps_text.enter().append("text")
+        .attr("x", 460)
+        .attr("y", 440);
+
+    steps_text.text(function(d) { return "Step " + d + "/60"; });
+}
+
+function draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g) {
     draw_graph(data, path_g, circle_g, label_g, SCC_g);
     draw_stack(data, data.stack, stack_x, "stack", stack_g, DFS_x, box_h, box_w, hot_seat, stack_y0);
     draw_DFS(data, DFS_g, DFS_x, box_h, box_w, hot_seat, stack_y0);
@@ -372,11 +389,12 @@ function draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_
     draw_flying(data, flying_g, stack_y0, box_h);
     draw_flying_min(data, flying_min_g, hot_seat);
     draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, box_w, box_h, stack_y0);
+    draw_steps(data, steps_g);
 }
 
-function update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
+function update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g) {
     process_node(data);
-    draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
+    draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g);
 }
 
 function init_markers(svg) {
@@ -418,17 +436,17 @@ function draw_SCC_animation(target) {
     var data = load_data();
 
     // Image Dimensions
-    var w = 600;
+    var w = 581;
     var h = 500;
     var N = data.nodes.length;
     var stack_y0 = (h - 100) - 30;
     var box_h = stack_y0/(N + 1);
-    var box_w = 35;
+    var box_w = 37;
     var circle_r = 20;
 
     // Stack locations
     var DFS_x = 20;
-    var stack_x = 60;
+    var stack_x = 100;
 
     // Hotseat location
     var hot_seat = {x: 100, y: 100};
@@ -438,7 +456,8 @@ function draw_SCC_animation(target) {
     // The <svg> tag
     var svg = d3.select(target).append("svg")
 	.attr("width", w)
-	.attr("height", h);
+	.attr("height", h)
+        .attr("style", "display: block; margin: 0 auto;");
 
     // The main dynamic groups
     var hotseat_g = svg.append("g").attr("id", "hotseat");
@@ -473,7 +492,7 @@ function draw_SCC_animation(target) {
         .attr("stroke", "#000")
         .attr("fill", "#FFF")
         .attr("fill-opacity", 0)
-        .on("click", function() { update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0); });
+        .on("click", function() { update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g); });
     button_g.append("rect").attr("id", "reset")
         .attr("x", 20)
         .attr("y", 473)
@@ -485,7 +504,7 @@ function draw_SCC_animation(target) {
         .attr("stroke-width", "2px")
         .attr("fill", "#FFF")
         .attr("fill-opacity", 0)
-        .on("click", function() { data = load_data(); draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);});
+        .on("click", function() { data = load_data(); draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g);});
 
     init_markers(svg);
 
@@ -499,10 +518,14 @@ function draw_SCC_animation(target) {
     var SCC_g = svg.append("g").attr("id", "SCC");
 
     // The static content
-    set_stack_label(svg, DFS_x, stack_y0, box_w, "DFS", h);
-    set_stack_label(svg, stack_x, stack_y0, box_w, "stack", h);
+    set_stack_label(svg, stack_x, stack_y0, box_w, "backtracked", 6);
+    set_stack_label(svg, DFS_x, stack_y0, box_w, "DFS", 2);
 
-    draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
+
+    var steps_g = svg.append("g").attr("id", "steps");
+    
+
+    draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g);
 
 }
 
@@ -553,10 +576,11 @@ function draw_text(texts, g) {
 }
 
 function draw_simple_graphs(target) {
-    var w = 500, h = 200;
+    var w = 500, h = 150;
     var svg = d3.select(target).append("svg")
 	.attr("width", w)
-	.attr("height", h);
+	.attr("height", h)
+        .attr("style", "display: block; margin: 0 auto;");
 
     init_markers(svg);
 
@@ -570,42 +594,44 @@ function draw_simple_graphs(target) {
 		 ], svg);
     draw_text([{x: 50, y: 50, text: "A"},
 	       {x: 200, y: 50, text: "B"},
-	       {x: 125, y: 100, text: "Strongly connected"},
+	       {x: 125, y: 100, text: "Weakly connected"},
 	       {x: 300, y: 50, text: "A"},
 	       {x: 450, y: 50, text: "B"},
-	       {x: 375, y: 100, text: "Weakly connected"},
+	       {x: 375, y: 100, text: "Strongly connected"},
 	      ], svg)
 }
 
 function draw_ABC_graph(target) {
-    var w = 500, h = 300;
+    var w = 260, h = 250;
     var svg = d3.select(target).append("svg")
 	.attr("width", w)
-	.attr("height", h);
+	.attr("height", h)
+        .attr("style", "display: block; margin: 0 auto;");
 
     init_markers(svg)
 
-    draw_lines([{x1: 50, x2: 125, y1: 50, y2: 150, bidirectional: true},
-		{x1: 200, x2: 125, y1: 50, y2: 150, bidirectional: true},
+    draw_lines([{x1: w/2 - 80, x2: w/2, y1: 50, y2: 150, bidirectional: true},
+		{x1: w/2 + 80, x2: w/2, y1: 50, y2: 150, bidirectional: true},
 	       ], svg);
-    draw_circles([{cx: 50, cy: 50, r: 20},
-		  {cx: 200, cy: 50, r: 20},
-		  {cx: 125, cy: 150, r: 20}
+    draw_circles([{cx: w/2 - 80, cy: 50, r: 20},
+		  {cx: w/2 + 80, cy: 50, r: 20},
+		  {cx: w/2, cy: 150, r: 20}
 		 ], svg);
-    draw_text([{x: 50, y: 50, text: "B"},
-	       {x: 200, y: 50, text: "C"},
-	       {x: 125, y: 150, text: "A"},
-	       {x: 125, y: 200, text: "A is strongly connect to both B and C"},
-	       {x: 125, y: 220, text: "so B and C are also strongly connected"},
+    draw_text([{x: w/2 - 80, y: 50, text: "B"},
+	       {x: w/2 + 80, y: 50, text: "C"},
+	       {x: w/2, y: 150, text: "A"},
+	       {x: w/2, y: 200, text: "A is strongly connect to both B and C"},
+	       {x: w/2, y: 220, text: "so B and C are also strongly connected"},
 	      ], svg)
 
 }
 
 function draw_SCC_graph(target) {
-    var w = 500, h = 300;
+    var w = 350, h = 230;
     var svg = d3.select(target).append("svg")
 	.attr("width", w)
-	.attr("height", h);
+	.attr("height", h)
+        .attr("style", "display: block; margin: 0 auto;")
 
     init_markers(svg)
 
@@ -633,10 +659,10 @@ function draw_SCC_graph(target) {
 }
 
 function main() {
-    draw_SCC_animation(".animation");
-    draw_simple_graphs(".strong_weak");
-    draw_ABC_graph(".ABC");
-    draw_SCC_graph(".split_up");
+    draw_SCC_animation("#animation");
+    draw_simple_graphs("#strong_weak");
+    draw_ABC_graph("#ABC");
+    draw_SCC_graph("#split_up");
 }
 
 //main();

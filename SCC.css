@@ -1,0 +1,23 @@
+text {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+rect {
+    stroke-width: 1px;
+}
+
+rect.SCC {
+    stroke-width: 2px;
+    fill-opacity: 0;
+    fill: #FFF;
+}
+
+rect.stack {
+    fill: #FFF;
+}
+
+svg {
+    display: block;
+    margin: 0 auto;
+}
