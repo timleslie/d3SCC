@@ -3,7 +3,7 @@ function set_stack_label(svg, stack_x0, stack_y0, stack_w, label, h) {
     svg.append("g").attr("id", "label").append("text")
 	.text(label)
 	.attr("x", stack_x0 + stack_w/2)
-	.attr("y", (h + stack_y0)/2 + 5)
+	.attr("y", stack_y0 + 30)
 	.attr("text-anchor", "middle")
 }
 
@@ -284,6 +284,16 @@ function draw_cur_label(data, cur_label_g) {
     cur_label_text.text( function(d) { return "Label: " + d; } );
 }
 
+function draw_msg(data, msg_g) {
+    var msg_text = msg_g.selectAll("text")
+        .data([data.msg])
+
+    msg_text.enter().append("text")
+        .attr("x", 150)
+        .attr("y", 470);
+    msg_text.text( function(d) { return d; } ).attr("font-weight", "bold");
+}
+
 function draw_flying(data, flying_g, stack_y0, box_h) {
     if (data.flying_index.length > 0) 
 	data.flying_index.push(data.flying_index[0]);
@@ -351,37 +361,40 @@ function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, bo
         .remove();
 }
 
-function draw_all(path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
+function draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
     draw_graph(data, path_g, circle_g, label_g, SCC_g);
     draw_stack(data, data.stack, stack_x, "stack", stack_g, DFS_x, box_h, box_w, hot_seat, stack_y0);
     draw_DFS(data, DFS_g, DFS_x, box_h, box_w, hot_seat, stack_y0);
     draw_hotseat(data, hotseat_g, box_h, box_w, hot_seat);
     draw_index(data, index_g);
     draw_cur_label(data, cur_label_g);
+    draw_msg(data, msg_g);
     draw_flying(data, flying_g, stack_y0, box_h);
     draw_flying_min(data, flying_min_g, hot_seat);
     draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, box_w, box_h, stack_y0);
 }
 
-function update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
+function update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0) {
     process_node(data);
-    draw_all(path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
+    draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
 }
 
 function main() {
 
+    var data = load_data();
+
     // Image Dimensions
     var w = 600;
-    var h = 400;
+    var h = 500;
     var N = data.nodes.length;
-    var stack_y0 = h - 30;
+    var stack_y0 = (h - 100) - 30;
     var box_h = stack_y0/(N + 1);
     var box_w = 35;
     var circle_r = 20;
 
     // Stack locations
-    var DFS_x = 10;
-    var stack_x = 50;
+    var DFS_x = 20;
+    var stack_x = 60;
 
     // Hotseat location
     var hot_seat = {x: 100, y: 100};
@@ -399,10 +412,47 @@ function main() {
     var DFS_g = svg.append("g").attr("id", "DFS");
     var index_g = svg.append("g").attr("id", "index");
     var cur_label_g = svg.append("g").attr("id", "cur_label");
+    var msg_g = svg.append("g").attr("id", "msg");
     var flying_g = svg.append("g").attr("id", "flying");
     var flying_min_g = svg.append("g").attr("id", "flying_min");
     var flying_label_a_g = svg.append("g").attr("id", "flying_label_a");
     var flying_label_b_g = svg.append("g").attr("id", "flying_label_b");
+
+    var button_g = svg.append("g").attr("id", "button");
+    button_g.append("text").attr("id", "step_text")
+        .attr("x", 20 + 40)
+        .attr("y", 443 + 15)
+	.attr("text-anchor", "middle")
+        .text("step");
+    button_g.append("text").attr("id", "reset_text")
+        .attr("x", 20 + 40)
+        .attr("y", 473 + 15)
+	.attr("text-anchor", "middle")
+        .text("reset");
+    button_g.append("rect").attr("id", "step")
+        .attr("x", 20)
+        .attr("y", 443)
+        .attr("rx", 5)
+        .attr("ry", 5)
+        .attr("height", 20)
+        .attr("width", 80)
+        .attr("stroke", "#000")
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 0)
+        .on("click", function() { update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0); });
+    button_g.append("rect").attr("id", "reset")
+        .attr("x", 20)
+        .attr("y", 473)
+        .attr("rx", 5)
+        .attr("ry", 5)
+        .attr("height", 20)
+        .attr("width", 80)
+        .attr("stroke", "#000")
+        .attr("stroke-width", "2px")
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 0)
+        .on("click", function() { data = load_data(); draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);});
+
 
     // build the arrow.
     svg.append("svg:defs").selectAll("marker")
@@ -448,11 +498,8 @@ function main() {
     set_stack_label(svg, DFS_x, stack_y0, box_w, "DFS", h);
     set_stack_label(svg, stack_x, stack_y0, box_w, "stack", h);
 
-    draw_all(path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
+    draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
 
-    setInterval(function() {
-	update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
-    }, 1500);
 }
 
 main();
