@@ -37,7 +37,7 @@ function load_data() {
 	flying_index: [],
 	flying_min: [],
 	flying_label: [],
-	msg: undefined,
+	msg: "Use buttons to step through the SCC algorithm",
     };
     return data;
 }

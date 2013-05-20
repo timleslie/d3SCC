@@ -379,7 +379,41 @@ function update_and_draw(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_
     draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);
 }
 
-function main() {
+function init_markers(svg) {
+
+    // build the arrow.
+    svg.append("svg:defs").selectAll("marker")
+	.data(["end"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 25)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", "auto")
+	.append("svg:path")
+	.attr("d", "M0,-5L10,0L0,5");
+
+    svg.append("svg:defs").selectAll("marker")
+	.data(["start"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", -15)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", "auto")
+	.append("svg:path")
+	.attr('d', 'M10,-5L0,0L10,5')
+	.attr('fill', '#000');
+}
+
+
+function draw_SCC_animation(target) {
 
     var data = load_data();
 
@@ -402,7 +436,7 @@ function main() {
     hot_seat.text_y = text_y(hot_seat.y, box_h)
 
     // The <svg> tag
-    var svg = d3.select("body").append("svg")
+    var svg = d3.select(target).append("svg")
 	.attr("width", w)
 	.attr("height", h);
 
@@ -453,37 +487,7 @@ function main() {
         .attr("fill-opacity", 0)
         .on("click", function() { data = load_data(); draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0);});
 
-
-    // build the arrow.
-    svg.append("svg:defs").selectAll("marker")
-	.data(["end"])      // Different link/path types can be defined here
-	.enter().append("svg:marker")    // This section adds in the arrows
-	.attr("id", String)
-        .attr("strokeWidth", 1)
-	.attr("viewBox", "0 -5 10 10")
-	.attr("refX", 25)
-	.attr("refY", 0)
-	.attr("markerWidth", 6)
-	.attr("markerHeight", 6)
-	.attr("orient", "auto")
-	.append("svg:path")
-	.attr("d", "M0,-5L10,0L0,5");
-
-    svg.append("svg:defs").selectAll("marker")
-	.data(["start"])      // Different link/path types can be defined here
-	.enter().append("svg:marker")    // This section adds in the arrows
-	.attr("id", String)
-        .attr("strokeWidth", 1)
-	.attr("viewBox", "0 -5 10 10")
-	.attr("refX", -15)
-	.attr("refY", 0)
-	.attr("markerWidth", 6)
-	.attr("markerHeight", 6)
-	.attr("orient", "auto")
-	.append("svg:path")
-	.attr('d', 'M10,-5L0,0L10,5')
-
-    .attr('fill', '#000');
+    init_markers(svg);
 
     // Graph
     var graph_g = svg.append("g").attr("id", "graph");
@@ -502,4 +506,137 @@ function main() {
 
 }
 
-main();
+function draw_lines(lines, g) {
+    g.selectAll("line").data(lines).enter().append("line")
+        .attr("x1", function(d) { return d.x1; })
+        .attr("y1", function(d) { return d.y1; })
+        .attr("x2", function(d) { return d.x2; })
+        .attr("y2", function(d) { return d.y2; })
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2)
+	.attr("marker-start", function(d) { if (d.bidirectional) return "url(#start)"; } )
+	.attr("marker-end", "url(#end)")
+}
+
+function draw_circles(circles, g) {
+    g.selectAll("circle").data(circles).enter().append("circle")
+        .attr("cx", function(d) { return d.cx; })
+        .attr("cy", function(d) { return d.cy; })
+        .attr("r", function(d) { return d.r; })
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2)
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 1)
+}
+
+function draw_rects(rects, g) {
+    g.selectAll("rect").data(rects).enter().append("rect")
+        .attr("x", function(d) { return d.x; } )
+        .attr("y", function(d) { return d.y; } )
+        .attr("width", function(d) { return d.width; } )
+        .attr("height", function(d) { return d.height; } )
+        .attr("rx", 10)
+        .attr("ry", 10)
+        .attr("stroke", "#000")
+        .attr("stroke-width", 5)
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 0)
+        
+}
+
+function draw_text(texts, g) {
+    g.selectAll("text").data(texts).enter().append("text")
+        .attr("x", function(d) { return d.x; } )
+        .attr("y", function(d) { return d.y + 5; } )
+	.attr("text-anchor", "middle")
+        .text(function(d) { return d.text; } )
+}
+
+function draw_simple_graphs(target) {
+    var w = 500, h = 200;
+    var svg = d3.select(target).append("svg")
+	.attr("width", w)
+	.attr("height", h);
+
+    init_markers(svg);
+
+    draw_lines([{x1: 50, x2: 200, y1: 50, y2: 50, bidirectional: false},
+		{x1: 300, x2: 450, y1: 50, y2: 50, bidirectional: true},
+	       ], svg);
+    draw_circles([{cx: 50, cy: 50, r: 20},
+		  {cx: 200, cy: 50, r: 20},
+		  {cx: 300, cy: 50, r: 20},
+		  {cx: 450, cy: 50, r: 20},
+		 ], svg);
+    draw_text([{x: 50, y: 50, text: "A"},
+	       {x: 200, y: 50, text: "B"},
+	       {x: 125, y: 100, text: "Strongly connected"},
+	       {x: 300, y: 50, text: "A"},
+	       {x: 450, y: 50, text: "B"},
+	       {x: 375, y: 100, text: "Weakly connected"},
+	      ], svg)
+}
+
+function draw_ABC_graph(target) {
+    var w = 500, h = 300;
+    var svg = d3.select(target).append("svg")
+	.attr("width", w)
+	.attr("height", h);
+
+    init_markers(svg)
+
+    draw_lines([{x1: 50, x2: 125, y1: 50, y2: 150, bidirectional: true},
+		{x1: 200, x2: 125, y1: 50, y2: 150, bidirectional: true},
+	       ], svg);
+    draw_circles([{cx: 50, cy: 50, r: 20},
+		  {cx: 200, cy: 50, r: 20},
+		  {cx: 125, cy: 150, r: 20}
+		 ], svg);
+    draw_text([{x: 50, y: 50, text: "B"},
+	       {x: 200, y: 50, text: "C"},
+	       {x: 125, y: 150, text: "A"},
+	       {x: 125, y: 200, text: "A is strongly connect to both B and C"},
+	       {x: 125, y: 220, text: "so B and C are also strongly connected"},
+	      ], svg)
+
+}
+
+function draw_SCC_graph(target) {
+    var w = 500, h = 300;
+    var svg = d3.select(target).append("svg")
+	.attr("width", w)
+	.attr("height", h);
+
+    init_markers(svg)
+
+    draw_lines([{x1: 50, y1: 50, x2: 50, y2: 150, bidirectional: false},
+		{x1: 50, y1: 150, x2: 125, y2: 100, bidirectional: false},
+		{x1: 125, y1: 100, x2: 50, y2: 50, bidirectional: false},
+		{x1: 125, y1: 100, x2: 225, y2: 100, bidirectional: false},
+		{x1: 225, y1: 100, x2: 300, y2: 50, bidirectional: false},
+		{x1: 300, y1: 50, x2: 300, y2: 150, bidirectional: false},
+		{x1: 300, y1: 150, x2: 225, y2: 100, bidirectional: false},
+	       ], svg);
+    draw_circles([{cx: 50, cy: 50, r: 20},
+		  {cx: 50, cy: 150, r: 20},
+		  {cx: 125, cy: 100, r: 20},
+		  {cx: 225, cy: 100, r: 20},
+		  {cx: 300, cy: 50, r: 20},
+		  {cx: 300, cy: 150, r: 20},
+		 ], svg);
+
+    draw_rects([{x: 20, y: 20, height: 160, width: 140},
+		{x: 190, y: 20, height: 160, width: 140},
+	       ], svg);
+    draw_text([{x: 175, y: 200, text: "A graph split into strongly connected components"},
+	      ], svg);
+}
+
+function main() {
+    draw_SCC_animation(".animation");
+    draw_simple_graphs(".strong_weak");
+    draw_ABC_graph(".ABC");
+    draw_SCC_graph(".split_up");
+}
+
+//main();
