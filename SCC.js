@@ -23,6 +23,7 @@ function load_data() {
 		{nodes: [2, 3], bidirectional: false},
 		{nodes: [3, 1], bidirectional: false},
 		{nodes: [0, 4], bidirectional: true},
+		{nodes: [4, 1], bidirectional: false},
 		{nodes: [4, 5], bidirectional: false},
 		{nodes: [5, 6], bidirectional: false},
 		{nodes: [6, 4], bidirectional: false},

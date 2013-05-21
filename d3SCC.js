@@ -132,6 +132,10 @@ function draw_DFS(data, DFS_g, stack_x0, box_h, box_w, hot_seat, stack_y0) {
     var stack_rect = DFS_g.selectAll("rect")
 	.data(data.DFS, function(d) { return d; });
 
+    stack_rect.transition().duration(1000)
+	.attr("x", function(d, i) { return stack_x0; } )
+	.attr("y", function(d, i) { return box_y(i, stack_y0, box_h) } )
+
     // Boxes are created in place and fade in
     stack_rect.enter().append("rect")
 	.attr("fill", "#FFF")
@@ -141,8 +145,10 @@ function draw_DFS(data, DFS_g, stack_x0, box_h, box_w, hot_seat, stack_y0) {
 	.attr("x", function(d, i) { return stack_x0; } )
 	.attr("y", function(d, i) { return box_y(i, stack_y0, box_h) } )
         .attr("stroke", "#FFF")
+        .attr("stroke-width", 2)
         .transition().duration(1000)
-        .attr("stroke", "#000");
+        .attr("stroke", "#000")
+	.transition().delay(1000).text(function(d) { return node_text(data.nodes[d]); });
 
     // On exit, they move to the hot seat
     stack_rect.exit()
@@ -153,22 +159,27 @@ function draw_DFS(data, DFS_g, stack_x0, box_h, box_w, hot_seat, stack_y0) {
 
     // Text
     var stack_text = DFS_g.selectAll("text")
-	.data(data.DFS);
+	.data(data.DFS, function(d) { return d; });
+
+    stack_text.transition().duration(1000)
+	.attr("x", stack_x0 + box_w/2)
+        .attr("y", function(d, i) { return text_y(box_y(i, stack_y0, box_h), box_h); } )
 
     // Text slides in from the nodes
     stack_text.enter().append("text")
 	.attr("text-anchor", "middle")
 	.attr("x", function(d) { return data.nodes[d].x; } )
         .attr("y", function(d) { return data.nodes[d].y + 5; } )
+	.text(function(d) { return node_text(data.nodes[d]); })
 	.transition().duration(1000)
 	.attr("x", stack_x0 + box_w/2)
   	.attr("y", function(d, i) { return text_y(box_y(i, stack_y0, box_h), box_h); } )
 
+
     // If we have flying text coming in, delay until it has arrived
-    if (data.flying_index.length > 0) 
-	stack_text.transition().delay(1000).text(function(d) { return node_text(data.nodes[d]); });
-    else
-	stack_text.text(function(d) { return node_text(data.nodes[d]); });
+    if (data.flying_index.length > 0) {
+	stack_text.transition().delay(1000).text(function(d) { return node_text(data.nodes[d]); })
+    }
 
     // On exit, either fade out or move to the hot seat
     stack_text.exit()
