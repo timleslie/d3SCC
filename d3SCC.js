@@ -177,7 +177,7 @@ function draw_DFS(data, DFS_g, stack_x0, box_h, box_w, hot_seat, stack_y0) {
 
 
     // If we have flying text coming in, delay until it has arrived
-    if (data.flying_index.length > 0) {
+    if (data.state == "PUSH_KIDS") {
 	stack_text.transition().delay(1000).text(function(d) { return node_text(data.nodes[d]); })
     }
 
@@ -239,18 +239,15 @@ function draw_stack(data, stack_data, stack_x0, id, g, stack_x0_other, box_h, bo
 }
 
 function draw_hotseat(data, hotseat_g, box_h, box_w, hot_seat) {
+    var hotseat_data = [];
 
-    if (data.need_to_find_min >= 0) {
-	data = [data.nodes[data.need_to_find_min]];
-    } else if (data.need_to_push_stack >= 0) {
-	data = [data.nodes[data.need_to_push_stack]];
-    } else {
-	// Hotseat is empty
-	data = [];
+    if (data.state == "MIN" || data.state == "PUSH_BT" || data.state == "SET_LABEL" || data.state == "POP_BT") {
+	hotseat_data = [data.nodes[data.hot_seat]]
+	console.log("DRAW HOT SEAT", hotseat_data)
     }
-    
+
     var hot_rects = hotseat_g.selectAll("rect").
-	data(data);
+	data(hotseat_data);
 
     hot_rects.enter().append("rect")
         .attr("height", box_h)
@@ -262,10 +259,16 @@ function draw_hotseat(data, hotseat_g, box_h, box_w, hot_seat) {
         .transition().delay(1000).duration(1e-6)
         .attr("stroke", "#000")
 
-    hot_rects.exit().remove()
+    if (data.previous_state == "POP_BT") {
+	hot_rects.exit().transition().duration(1000)
+	    .attr("stroke", "#FFF")
+	    .remove();
+    } else {
+	hot_rects.exit().remove();
+    }
 
     var hot_text = hotseat_g.selectAll("text").
-	data(data);
+	data(hotseat_data);
 
     hot_text.enter().append("text")
 	.attr("text-anchor", "middle")
@@ -275,7 +278,14 @@ function draw_hotseat(data, hotseat_g, box_h, box_w, hot_seat) {
     hot_text.transition().delay(1000).duration(1e-6)
         .text( node_text );
 
-    hot_text.exit().remove();
+    if (data.previous_state == "POP_BT") {
+	console.log("LET'S SLOW IT DOWN");
+	hot_text.exit().transition().duration(1000)
+            .attr("stroke", "#FFF")
+	    .remove();
+    } else {
+	hot_text.exit().remove();
+    }
 }
 
 function draw_index(data, index_g) {
@@ -312,10 +322,13 @@ function draw_msg(data, msg_g) {
 }
 
 function draw_flying(data, flying_g, stack_y0, box_h) {
-    if (data.flying_index.length > 0) 
-	data.flying_index.push(data.flying_index[0]);
+    var flying_index = [];
+    if (data.state == "PUSH_KIDS") {
+	flying_index.push(data.DFS.last());
+	flying_index.push(data.DFS.last());
+    }
     var flying_text = flying_g.selectAll("text")
-        .data(data.flying_index)
+        .data(flying_index)
 	.enter().append("text")
         .attr("x", 60)
         .attr("y", 20)
@@ -341,27 +354,39 @@ function draw_flying_min(data, flying_min_g, hot_seat) {
         .remove()
 }
 
-function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, box_w, box_h, stack_y0) {
+function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, box_w, box_h, stack_y0, hot_seat) {
 
-    var len = data.flying_label.length;
-    var flying_nodes = [];
-    for (var i=0; i < data.flying_label.length; i++) {
-	flying_nodes.push(data.nodes[data.stack[data.flying_label[i]]]);
-    }
     var label_x = 60;
     var label_y = 40;
 
+    var flying_to_stack = [];
+    var flying_nodes = [];
+    if (data.state == "POP_BT") {
+	flying_to_stack = [hot_seat.y];
+	flying_nodes = [data.nodes[data.hot_seat]];
+	console.log("LABEL + 1", data.label + 1)
+	for (var i=data.stack.length - 1; i >= 0; i--){
+	    console.log("i =", i, "link", data.nodes[data.stack[i]].link)
+	    if (data.nodes[data.stack[i]].link == data.label + 1) {
+		flying_to_stack.push(box_y(i, stack_y0, box_h));
+		flying_nodes.push(data.nodes[data.stack[i]]);
+	    }
+	}
+	console.log("POPPING", flying_to_stack);
+	console.log("POPPING", flying_nodes);
+    }
+
     // Flying label from top left to the stack
     var flying_label_a_text = flying_label_a_g.selectAll("text")
-        .data(data.flying_label)
+        .data(flying_to_stack)
 
     flying_label_a_text.enter().append("text")
         .attr("x", label_x)
         .attr("y", label_y)
-        .text(data.label)
+        .text(data.label + 1)
         .transition().duration(1000)
 	.attr("x", stack_x + box_w/2 + 2) // Slight offset to not land on top of the current label
-  	.attr("y", function(d, i) { return text_y(box_y(d, stack_y0, box_h), box_h); } )
+        .attr("y", function(d) { return text_y(d, box_h); } )
         .remove();
 
     // Flying label from top left to the graph
@@ -371,7 +396,7 @@ function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, bo
     flying_label_b_text.enter().append("text")
         .attr("x", label_x)
         .attr("y", label_y)
-        .text(data.label)
+        .text(data.label + 1)
         .transition().duration(1000)
 	.attr("x", function(d) { return d.x; } )
   	.attr("y", function(d) { return d.y; } )
@@ -386,7 +411,7 @@ function draw_steps(data, steps_g) {
         .attr("x", 460)
         .attr("y", 440);
 
-    steps_text.text(function(d) { return "Step " + d + "/60"; });
+    steps_text.text(function(d) { return "Step " + d + "/79"; });
 }
 
 function draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_x, DFS_g, box_h, box_w, hotseat_g, hot_seat, index_g, cur_label_g, msg_g, flying_g, flying_min_g, flying_label_a_g, flying_label_b_g, stack_y0, steps_g) {
@@ -399,7 +424,7 @@ function draw_all(data, path_g, circle_g, label_g, SCC_g, stack_x, stack_g, DFS_
     draw_msg(data, msg_g);
     draw_flying(data, flying_g, stack_y0, box_h);
     draw_flying_min(data, flying_min_g, hot_seat);
-    draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, box_w, box_h, stack_y0);
+    draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, box_w, box_h, stack_y0, hot_seat);
     draw_steps(data, steps_g);
 }
 

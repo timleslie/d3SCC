@@ -29,17 +29,15 @@ function load_data() {
 		{nodes: [6, 4], bidirectional: false},
 		{nodes: [2, 7], bidirectional: false},
 		{nodes: [8, 9], bidirectional: true}],
-	need_to_push: -1,
-	need_to_find_min: -1,
-	need_to_process_root: -1,
-	need_to_process_non_root: -1,
-	need_to_push_stack: -1,
-	need_to_pop_label: -1,
 	flying_index: [],
 	flying_min: [],
 	flying_label: [],
 	msg: "Use buttons to step through the SCC algorithm",
 	steps: 0,
+	previous_state: "",
+	state: "LOOK",
+	hot_seat: -1,
+	min: -1,
     };
     return data;
 }
@@ -50,15 +48,56 @@ if (!Array.prototype.last){
     };
 };
 
-function update_DFS_head(data, v) {
-    data.nodes[v].link = data.index;
-    data.index++;
-    data.flying_index = [v];
+function pop_dfs(data) {
+    data.hot_seat = data.DFS.pop();
+    data.msg = "Pop " + data.nodes[data.hot_seat].text  + " from the DFS stack.";
 }
 
-function push_links(data, v) {
+function push_bt(data) {
+    data.nodes[data.hot_seat].link = data.min;
+    data.stack.push(data.hot_seat);
+    data.msg = "Push " + data.nodes[data.hot_seat].text + " to backtrack stack and set link to min (" + data.min + ")";
+}
+
+function set_link(data) {
+    var v = data.DFS.last();
+    data.nodes[v].link = data.index;
+    data.index++;
+    data.msg = "Set link of " + data.nodes[v].text + " to " + data.nodes[v].link;
+}
+
+function push_dfs(data, v) {
+    data.DFS.push(v);
+    data.msg = "Pushing " + data.nodes[v].text + " to the DFS stack";
+}
+
+function find_min(data) {
+    var target;
+    var v = data.hot_seat;
+    var min = data.nodes[v].link;
+    for (var i = 0; i < data.links.length; i++) {
+	var link = data.links[i];
+	if (v == link.nodes[0]) {
+	    target = link.nodes[1];
+	    if (data.nodes[target].link < min) {
+		min = data.nodes[target].link;
+	    }
+	}
+	if (v == link.nodes[1] && link.bidirectional) {
+	    target = link.nodes[0];
+	    if (data.nodes[target].link < min) {
+		min = data.nodes[target].link;
+	    }
+	}
+
+    }
+    return min;
+}
+
+function push_kids(data) {
     var target;
     var found = [];
+    var v = data.DFS.last();
     for (var i = 0; i < data.links.length; i++) {
 	var link = data.links[i];
 	if (v == link.nodes[0]) {
@@ -89,129 +128,96 @@ function push_links(data, v) {
     }
 }
 
-function min_link(data, v) {
-    var target;
-    var min = data.nodes[v].link;
-    for (var i = 0; i < data.links.length; i++) {
-	var link = data.links[i];
-	if (v == link.nodes[0]) {
-	    target = link.nodes[1];
-	    if (data.nodes[target].link < min) {
-		min = data.nodes[target].link;
-		data.flying_min = [target];
-	    }
-	}
-	if (v == link.nodes[1] && link.bidirectional) {
-	    target = link.nodes[0];
-	    if (data.nodes[target].link < min) {
-		min = data.nodes[target].link;
-		data.flying_min = [target];
-	    }
-	}
+function set_label(data) {
 
-    }
-    return min;
-}
-
-function process_non_root(data, v) {
-    data.stack.push(v);
-}
-
-function process_root(data, link) {
     // Label all nodes
-    var i = data.stack.length - 1;
-    var nodes = [];
-    var root = data.nodes[data.stack[i]].text;
-    while (i >= 0 && data.nodes[data.stack[i]].link >= link) {
+    data.nodes[data.hot_seat].link = data.label;
+    for (var i = data.stack.length - 1; i >= 0 && data.nodes[data.stack[i]].link >= data.min; i--) {
 	data.nodes[data.stack[i]].link = data.label;
-	data.flying_label.push(i);
-	nodes.push(data.nodes[data.stack[i]].text);
-	i--;
-    }
-    data.msg = root + " is a root node. Set label = " + data.label + " for nodes with link >= " + link + ": " + nodes;
-    data.SCCs[data.nodes.length - data.label].visible = true;
-}
-
-function pop_labelled(data) { 
-    // Pop nodes, update index/label
-    nodes = []
-    while(data.stack.length > 0 && data.nodes[data.stack.last()].link == data.label) {
-	v = data.stack.pop();
-	nodes.push(data.nodes[v].text);
-	data.index--;
     }
     data.label--;
-    data.msg = "Pop nodes in this SCC from the backtracked stack: " + nodes;
+    data.msg = "Set the label for " + data.nodes[data.hot_seat].text + " and nodes on stack which don't have a smaller link"
+    data.SCCs[data.nodes.length - data.label - 1].visible = true;
 }
 
-function backtrack(data, v) {
-    var min = min_link(data, v);
-    data.need_to_push_stack = v;
-    if (min == data.nodes[v].link) {
-	data.need_to_process_root = data.nodes[v].link;
-	//data.flying_min = [v];
-	data.msg = "No children of " + data.nodes[v].text + " have a smaller link number: " + data.nodes[v].text + " is a root node"
-    } else {
-	data.nodes[v].link = min; // has a lower link, push to stack
-	data.msg = "Set link of " + data.nodes[v].text +  " to minimum link of its children (" + data.nodes[v].text + " = " + min + ")"
+function pop_bt(data) {
+    while(data.stack.length > 0 && data.nodes[data.stack.last()].link == data.label + 1) {
+	data.stack.pop();
+	data.index--;
     }
-    
+    data.index--;
+    data.msg = "Popping tags";
 }
-
 
 function process_node(data) {
-    data.flying_index = [];
-    data.flying_min = [];
-    data.flying_label = [];
-    if (data.need_to_push >= 0) {
-	v = data.need_to_push;
-	data.need_to_push = -1;
-	// Add links
-	push_links(data, v);
-    } else if (data.need_to_find_min >= 0) {
-	v = data.need_to_find_min;
-	data.need_to_find_min = -1;
-	backtrack(data, v);
-    } else if (data.need_to_push_stack >= 0) {
-	v = data.need_to_push_stack;
-	data.need_to_push_stack = -1;
-	data.msg = "Push " + data.nodes[v].text + " onto backtracked stack";
-	data.stack.push(v);
-    } else if (data.need_to_process_root >= 0) {
-	v = data.need_to_process_root;
-	data.need_to_process_root = -1;
-	process_root(data, v);	
-	data.need_to_pop_label = v;
-    } else if (data.need_to_pop_label >= 0) {
-	data.need_to_pop_label = -1;
-	pop_labelled(data);
-    } else {
-	var v = data.DFS.last();
-	if (v === undefined) {
-	    // Push root to DFS
-	    var i;
-	    for (i=0; i < data.nodes.length; i++) {
-		if (data.nodes[i].link == undefined) {
-		    data.msg = "Add next unvisited node to DFS stack (" + data.nodes[i].text + ")";
-		    data.DFS.push(i);
+    var v, min;
+    console.log("STEP", data.state);
+    data.previous_state = data.state;
+    switch(data.state) {
+	case "LOOK":
+	    v = data.DFS.last();
+	    if (v === undefined) {
+		data.msg = "DFS is empty. Push an unvisited node to DFS."
+		data.state = "PUSH_DFS";
+	    } else if (data.nodes[v].link === undefined) {
+		data.msg = "Top of DFS has no link. Begin phase 1 on " + data.nodes[v].text + ".";
+		data.state = "SET_LINK";
+	    } else {
+		data.msg = "Top of DFS has a link. Begin phase 2 on " + data.nodes[v].text + ".";
+		data.state = "POP_DFS";
+	    }
+	    break;
+	case "SET_LINK":
+            set_link(data);
+	    data.state = "PUSH_KIDS";
+	    break;
+	case "PUSH_KIDS":
+	    push_kids(data);
+            data.state = "LOOK";
+	    break;
+	case "PUSH_DFS":
+	    for (v=0; v < data.nodes.length; v++) {
+		if (data.nodes[v].link == undefined) {
+		    push_dfs(data, v);
+		    data.state = "LOOK";
 		    break;
 		}
 	    }
-	    if (i == data.nodes.length) {
-		data.steps--;
-		data.msg = "All SCCs identified";
+	    if (v == data.nodes.length) {
+		data.msg = "All SCCs identified: Process finished!";
+		data.state = "FINISH"
 	    }
-	} else if (data.nodes[v].link === undefined) {
-	    // Begin DFS update
-	    data.msg = "Set link number of node at top of DFS stack to index (" + data.nodes[v].text + " = " + data.index + ")";
-	    update_DFS_head(data, v);
-	    data.need_to_push = v;
-	} else {
-	    // Begin DFS backtrack
-	    v = data.DFS.pop();
-	    data.msg = "Pop DFS stack and begin backtrack operations on " + data.nodes[v].text;
-	    data.need_to_find_min = v;
-	}
+	    break;
+	case "POP_DFS":
+            pop_dfs(data);
+            data.state = "MIN"
+	    break;
+	case "MIN":
+            data.min = find_min(data);
+            if (data.min == data.nodes[data.hot_seat].link) {
+		data.msg = "No smaller linked nodes: " + data.nodes[data.hot_seat].text + " is a root node";
+		data.state = "SET_LABEL";
+	    } else {
+		data.msg = "Min (" + data.min + ") < link of " + data.nodes[data.hot_seat].text + " (" + data.nodes[data.hot_seat].link + "). " + data.nodes[data.hot_seat].text + " is not a root node.";
+		data.state = "PUSH_BT";
+	    }
+	    break;
+	case "PUSH_BT":
+	    push_bt(data);
+            data.state = "LOOK"
+	    break;
+	case "SET_LABEL":
+            set_label(data);
+            data.state = "POP_BT"
+	    break;
+	case "POP_BT":
+	    pop_bt(data);
+            data.state = "LOOK"
+	    break;
+	case "FINISH":
+	    break;
     }
-    data.steps++;
+
+    if (data.state != "FINISH")
+	data.steps++;
 }
