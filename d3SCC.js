@@ -694,11 +694,326 @@ function draw_SCC_graph(target) {
 	      ], svg);
 }
 
+function draw_stack_arrays(target) {
+    var N = 8 // number of values to consider
+    var box = 30; // Scale to work with
+    var w = (8 + N)*box;
+    var h = 10*box;
+    var DFS_x = 1*box
+    var main_x = 4*box;
+    var bt_x = (6 + N)*box
+
+    var base_y = h - 2*box
+
+    var svg = d3.select(target).append("svg")
+	.attr("width", w)
+	.attr("height", h)
+        .attr("style", "display: block; margin: 0 auto;")
+
+    svg.append("svg:defs").selectAll("marker")
+	.data(["end1"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 10)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", 75)
+	.append("svg:path")
+	.attr("d", "M0,-5L10,0L0,5")
+	.attr('fill', colors[2]);
+    svg.append("svg:defs").selectAll("marker")
+	.data(["start1"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 0)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", 305)
+	.append("svg:path")
+	.attr('d', 'M10,-5L0,0L10,5')
+	.attr('fill', colors[2]);
+
+    svg.append("svg:defs").selectAll("marker")
+	.data(["end3"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 10)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", 75)
+	.append("svg:path")
+	.attr("d", "M0,-5L10,0L0,5")
+	.attr('fill', colors[6]);
+    svg.append("svg:defs").selectAll("marker")
+	.data(["start3"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 0)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", 305)
+	.append("svg:path")
+	.attr('d', 'M10,-5L0,0L10,5')
+	.attr('fill', colors[6]);
+
+    svg.append("svg:defs").selectAll("marker")
+	.data(["end2"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 10)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", 280)
+	.append("svg:path")
+	.attr("d", "M0,-5L10,0L0,5")
+	.attr('fill', colors[2]);
+    svg.append("svg:defs").selectAll("marker")
+	.data(["start2"])      // Different link/path types can be defined here
+	.enter().append("svg:marker")    // This section adds in the arrows
+	.attr("id", String)
+        .attr("strokeWidth", 1)
+	.attr("viewBox", "0 -5 10 10")
+	.attr("refX", 0)
+	.attr("refY", 0)
+	.attr("markerWidth", 6)
+	.attr("markerHeight", 6)
+	.attr("orient", 40)
+	.append("svg:path")
+	.attr('d', 'M10,-5L0,0L10,5')
+	.attr('fill', '#000')
+	.attr('fill', colors[2]);
+
+
+    var DFS_data = [2, 6, 4];
+    var DFS_g = svg.append("g").attr("id", "DFS");
+    DFS_g.selectAll("rect")
+        .data(DFS_data).enter().append("rect")
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2)
+        .attr("fill", "#FFF")
+        .attr("height", box)
+        .attr("width", box)
+        .attr("x", DFS_x)
+        .attr("y", function(d, i) { return base_y - (i+1)*box; } );
+
+    DFS_g.selectAll("text")
+        .data(DFS_data).enter().append("text")
+        .attr("x", DFS_x + box/2)
+        .attr("y", function(d, i) { return base_y - (i+1)*box + (box/2) + 5; } )
+	.attr("text-anchor", "middle")
+        .attr("stroke", colors[2])
+        .text(function (d) { return d; });
+
+    var backtrack_data = [5, 7, 3, 1]
+    var backtrack_g = svg.append("g").attr("id", "backtrack");
+    backtrack_g.selectAll("rect")
+        .data(backtrack_data).enter().append("rect")
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2)
+        .attr("fill", "#FFF")
+        .attr("height", box)
+        .attr("width", box)
+        .attr("x", bt_x)
+        .attr("y", function(d, i) { return base_y - (i+1)*box; } );
+
+    backtrack_g.selectAll("text")
+        .data(backtrack_data).enter().append("text")
+        .attr("x", bt_x + box/2)
+        .attr("y", function(d, i) { return base_y - (i+1)*box + (box/2) + 5; } )
+	.attr("text-anchor", "middle")
+        .attr("stroke", colors[6])
+        .text(function (d) { return d; });
+
+    var path1_data = [[-1, 4], [4, 6], [6, 2]];
+    var path1_g = svg.append("g").attr("id", "path1")
+    path1_g.selectAll("path")
+        .data(path1_data).enter().append("path")
+	.attr("stroke-width", "2px")
+	.attr("stroke", colors[2])
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 0)
+	.attr("marker-start", function(d) { if (d[0] > d[1]) return "url(#start1)";} )
+	.attr("marker-end", function(d) { if (d[0] < d[1]) return "url(#end1)";} )
+	.attr("d", function (d) {
+	    console.log("DATA", d, d[0], d[1])
+	    var swap = d[0] > d[1];
+	    if (swap) {
+		d = [d[1], d[0]]
+	    }
+            var dx = box*(d[0] - d[1]),
+                dy = 0,
+                dr = Math.sqrt(dx * dx);
+	    var y = base_y - 5*box;
+	    if (swap)
+		return "M" + (main_x + box*(d[0] + 0.5) + 5) + "," + y + "A" + (dr/2) + "," + (dr/2) + " 0 0,1 " + (main_x + box*(d[1] + 0.5) - 5) + "," + y;
+	    else
+		return "M" + (main_x + box*(d[0] + 0.5) - 5) + "," + y + "A" + (dr/2) + "," + (dr/2) + " 0 0,1 " + (main_x + box*(d[1] + 0.5) + 5) + "," + y;
+        })
+
+    var path3_data = [[8, 1], [1, 3], [3, 7], [7, 5]];
+    var path3_g = svg.append("g").attr("id", "path3")
+    path3_g.selectAll("path")
+        .data(path3_data).enter().append("path")
+	.attr("stroke-width", "2px")
+	.attr("stroke", colors[6])
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 0)
+	.attr("marker-start", function(d) { if (d[0] > d[1]) return "url(#start3)";} )
+	.attr("marker-end", function(d) { if (d[0] < d[1]) return "url(#end3)";} )
+	.attr("d", function (d) {
+	    console.log("DATA", d, d[0], d[1])
+	    var swap = d[0] > d[1];
+	    if (swap) {
+		d = [d[1], d[0]]
+	    }
+            var dx = box*(d[0] - d[1]),
+                dy = 0,
+                dr = Math.sqrt(dx * dx);
+	    var y = base_y - 5*box;
+	    if (swap)
+		return "M" + (main_x + box*(d[0] + 0.5) + 5) + "," + y + "A" + (dr/2) + "," + (dr/2) + " 0 0,1 " + (main_x + box*(d[1] + 0.5) - 5) + "," + y;
+	    else
+		return "M" + (main_x + box*(d[0] + 0.5) - 5) + "," + y + "A" + (dr/2) + "," + (dr/2) + " 0 0,1 " + (main_x + box*(d[1] + 0.5) + 5) + "," + y;
+        })
+
+    var path2_data = [[-1, 2], [2, 6], [6, 4]];
+    var path2_g = svg.append("g").attr("id", "path2")
+    path2_g.selectAll("path")
+        .data(path2_data).enter().append("path")
+	.attr("stroke-width", "2px")
+	.attr("stroke", colors[2])
+        .attr("fill", "#FFF")
+        .attr("fill-opacity", 0)
+	.attr("marker-start", function(d) { if (d[0] > d[1]) return "url(#start2)";} )
+	.attr("marker-end", function(d) { if (d[0] < d[1]) return "url(#end2)";} )
+	.attr("d", function (d) {
+	    console.log("DATA", d, d[0], d[1])
+	    var swap = d[0] > d[1];
+	    if (swap) {
+		d = [d[1], d[0]]
+	    }
+            var dx = box*(d[0] - d[1]),
+                dy = 0,
+                dr = Math.sqrt(dx * dx);
+	    var y = base_y - 3*box;
+	    if (swap)
+		return "M" + (main_x + box*(d[0] + 0.5) + 5) + "," + y + "A" + (dr/2) + "," + (dr/2) + " 0 0,0 " + (main_x + box*(d[1] + 0.5) - 5) + "," + y;
+	    else
+		return "M" + (main_x + box*(d[0] + 0.5) - 5) + "," + y + "A" + (dr/2) + "," + (dr/2) + " 0 0,0 " + (main_x + box*(d[1] + 0.5) + 5) + "," + y;
+        })
+
+    var arrays_data = [0, 1, 2, 3, 4, 5, 6, 7]
+    var arrays_g = svg.append("g").attr("id", "arrays1")
+    arrays_g.selectAll("rect")
+        .data(arrays_data).enter().append("rect")
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2)
+        .attr("fill", "#FFF")
+        .attr("height", box)
+        .attr("width", box)
+        .attr("y", base_y - 5*box)
+        .attr("x", function(d, i) { return main_x + i*box; } );
+    arrays_g = svg.append("g").attr("id", "arrays2")
+    arrays_g.selectAll("rect")
+        .data(arrays_data).enter().append("rect")
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2)
+        .attr("fill", "#FFF")
+        .attr("height", box)
+        .attr("width", box)
+        .attr("y", base_y - 4*box)
+        .attr("x", function(d, i) { return main_x + i*box; } );
+
+    arrays_g.selectAll("text")
+        .data(arrays_data).enter().append("text")
+        .attr("x", function(d, i) { return main_x + i*box + box/2; } )
+        .attr("y", function(d, i) { return base_y - 1*box + (box/2) + 5; } )
+	.attr("text-anchor", "middle")
+        .text(function (d) { return d; });
+
+
+    var stack1_data = [-1, -1, -1, -1, 6, -1, 2, -1];
+    var stack1_g = svg.append("g").attr("id", "stack1")
+    stack1_g.selectAll("text")
+        .data(stack1_data).enter().append("text")
+        .attr("y", base_y - 5*box + box/2 + 5)
+        .attr("x", function(d, i) { return main_x + i*box + box/2; } )
+	.attr("text-anchor", "middle")
+        .attr("stroke", colors[2])
+        .text(function (d) { if (d >= 0) return d; });
+
+    var stack2_data = [-1, -1, 6, -1, -1, -1, 4, -1];
+    var stack2_g = svg.append("g").attr("id", "stack2")
+    stack2_g.selectAll("text")
+        .data(stack2_data).enter().append("text")
+        .attr("y", base_y - 4*box + box/2 + 5)
+        .attr("x", function(d, i) { return main_x + i*box + box/2; } )
+	.attr("text-anchor", "middle")
+        .attr("stroke", colors[2])
+        .text(function (d) { if (d >= 0) return d; });
+
+    // The backtrack stack
+    var stack3_data = [-1, 3, -1, 7, -1, -1, -1, 5];
+    var stack3_g = svg.append("g").attr("id", "stack3")
+    stack3_g.selectAll("text")
+        .data(stack3_data).enter().append("text")
+        .attr("y", base_y - 5*box + box/2 + 5)
+        .attr("x", function(d, i) { return main_x + i*box + box/2; } )
+	.attr("text-anchor", "middle")
+        .attr("stroke", colors[6])
+        .text(function (d) { if (d >= 0) return d; });
+
+    var start_values = [[4, -1, 5, 2], [2, -1, 4, 2], [1, 8, 5, 6]];
+    var start_g = svg.append("g").attr("id", "start")
+    start_g.selectAll("text")
+        .data(start_values).enter().append("text")
+        .attr("x", function(d) { return main_x + d[1]*box + box/2; } )
+        .attr("y", function(d) { return base_y - d[2]*box + box/2 + 5; } )
+	.attr("text-anchor", "middle")
+        .attr("stroke", function(d) { return colors[d[3]]; })
+        .text(function (d) { return d[0]; });
+
+    var labels_data = [["DFS", DFS_x, 2], ["backtrack", bt_x, 6]];
+    var labels_g = svg.append("g").attr("id", "labels")
+    labels_g.selectAll("text")
+        .data(labels_data).enter().append("text")
+        .attr("x", function(d) { return d[1] + box/2; })
+        .attr("y", base_y + box/2 + 5)
+	.attr("text-anchor", "middle")
+        .attr("stroke", function(d) { return colors[d[2]]; })
+        .text(function (d) { return d[0]; });
+
+    var caption_g = svg.append("g").attr("id", "caption")
+    caption_g.selectAll("text")
+        .data(["Memory sharing of the DFS and backtrack stacks"]).enter().append("text")
+        .attr("x", function(d) { return w/2; } )
+        .attr("y", h - box/2)
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d; });
+
+}
+
 function main() {
     draw_SCC_animation("#animation");
     draw_simple_graphs("#strong_weak");
     draw_ABC_graph("#ABC");
     draw_SCC_graph("#split_up");
+    draw_stack_arrays("#stack_arrays")
 }
 
 //main();
