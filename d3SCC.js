@@ -243,7 +243,6 @@ function draw_hotseat(data, hotseat_g, box_h, box_w, hot_seat) {
 
     if (data.state == "MIN" || data.state == "PUSH_BT" || data.state == "SET_LABEL" || data.state == "POP_BT") {
 	hotseat_data = [data.nodes[data.hot_seat]]
-	console.log("DRAW HOT SEAT", hotseat_data)
     }
 
     var hot_rects = hotseat_g.selectAll("rect").
@@ -279,7 +278,6 @@ function draw_hotseat(data, hotseat_g, box_h, box_w, hot_seat) {
         .text( node_text );
 
     if (data.previous_state == "POP_BT") {
-	console.log("LET'S SLOW IT DOWN");
 	hot_text.exit().transition().duration(1000)
             .attr("stroke", "#FFF")
 	    .remove();
@@ -364,16 +362,12 @@ function draw_flying_label(data, flying_label_a_g, flying_label_b_g, stack_x, bo
     if (data.state == "POP_BT") {
 	flying_to_stack = [hot_seat.y];
 	flying_nodes = [data.nodes[data.hot_seat]];
-	console.log("LABEL + 1", data.label + 1)
 	for (var i=data.stack.length - 1; i >= 0; i--){
-	    console.log("i =", i, "link", data.nodes[data.stack[i]].link)
 	    if (data.nodes[data.stack[i]].link == data.label + 1) {
 		flying_to_stack.push(box_y(i, stack_y0, box_h));
 		flying_nodes.push(data.nodes[data.stack[i]]);
 	    }
 	}
-	console.log("POPPING", flying_to_stack);
-	console.log("POPPING", flying_nodes);
     }
 
     // Flying label from top left to the stack
@@ -850,7 +844,6 @@ function draw_stack_arrays(target) {
 	.attr("marker-start", function(d) { if (d[0] > d[1]) return "url(#start1)";} )
 	.attr("marker-end", function(d) { if (d[0] < d[1]) return "url(#end1)";} )
 	.attr("d", function (d) {
-	    console.log("DATA", d, d[0], d[1])
 	    var swap = d[0] > d[1];
 	    if (swap) {
 		d = [d[1], d[0]]
@@ -876,7 +869,6 @@ function draw_stack_arrays(target) {
 	.attr("marker-start", function(d) { if (d[0] > d[1]) return "url(#start3)";} )
 	.attr("marker-end", function(d) { if (d[0] < d[1]) return "url(#end3)";} )
 	.attr("d", function (d) {
-	    console.log("DATA", d, d[0], d[1])
 	    var swap = d[0] > d[1];
 	    if (swap) {
 		d = [d[1], d[0]]
@@ -902,7 +894,6 @@ function draw_stack_arrays(target) {
 	.attr("marker-start", function(d) { if (d[0] > d[1]) return "url(#start2)";} )
 	.attr("marker-end", function(d) { if (d[0] < d[1]) return "url(#end2)";} )
 	.attr("d", function (d) {
-	    console.log("DATA", d, d[0], d[1])
 	    var swap = d[0] > d[1];
 	    if (swap) {
 		d = [d[1], d[0]]
