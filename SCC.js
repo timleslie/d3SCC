@@ -136,7 +136,7 @@ function set_label(data) {
 	data.nodes[data.stack[i]].link = data.label;
     }
     data.label--;
-    data.msg = "Set the label for " + data.nodes[data.hot_seat].text + " and nodes on stack which don't have a smaller link"
+    data.msg = "Set the label for " + data.nodes[data.hot_seat].text + ", nodes which don't have a smaller link"
     data.SCCs[data.nodes.length - data.label - 1].visible = true;
 }
 
@@ -146,7 +146,7 @@ function pop_bt(data) {
 	data.index--;
     }
     data.index--;
-    data.msg = "Popping tags";
+    data.msg = "Removing nodes in the SCC from the backtrack stack.";
 }
 
 function process_node(data) {
